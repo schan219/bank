@@ -1,0 +1,25 @@
+{
+  "name": "bank",
+  "version": "1.0.0",
+  "description": "",
+  "main": "bank.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/schan219/bank.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/schan219/bank/issues"
+  },
+  "homepage": "https://github.com/schan219/bank#readme",
+  "dependencies": {
+    "bs58check": "^2.1.2",
+    "crypto-random-string": "^1.0.0",
+    "duplex-json-stream": "^1.0.1",
+    "sodium-native": "^2.2.1"
+  }
+}
