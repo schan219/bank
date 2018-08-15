@@ -1,3 +1,3 @@
-bank/*
-teller/*
+bank/*.txt
+teller/*.txt
 node_modules/*

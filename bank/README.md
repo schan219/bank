@@ -1,0 +1,1 @@
+This is the folder to store keys, encryption secret, nonce, log, and customer database for the bank
