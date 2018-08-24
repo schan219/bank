@@ -17,8 +17,6 @@
   },
   "homepage": "https://github.com/schan219/bank#readme",
   "dependencies": {
-    "bs58check": "^2.1.2",
-    "crypto-random-string": "^1.0.0",
     "duplex-json-stream": "^1.0.1",
     "sodium-native": "^2.2.1"
   }

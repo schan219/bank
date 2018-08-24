@@ -3,7 +3,6 @@ var jsonStream = require('duplex-json-stream')
 var net = require('net')
 const fs = require('fs')
 const path = require('path')
-const bs58check = require('bs58check')
 
 const generateKeyStrings = require('./sign').generateKeyStrings
 const createKeyPair = require('./sign').createKeyPair
@@ -29,7 +28,7 @@ var latestHash = ''
 ;(async () => {
     if (fs.existsSync(secretKeyPath) && fs.existsSync(publicKeyPath)) {
         keys = await getKeys(publicKeyPath, secretKeyPath)
-        client.write({cmd: 'gethash', customerId: bs58check.encode(keys.publicKey)})
+        client.write({cmd: 'gethash', customerId: keys.publicKey.toString('base64')})
     }
 
     rl.prompt()
@@ -44,10 +43,10 @@ rl.on('line', function(command) {
             if (args[0] !== null && keys.secretKey != undefined && keys.publicKey != undefined) {
                 var msg = {
                     cmd: 'balance',
-                    customerId: bs58check.encode(keys.publicKey)
+                    customerId: keys.publicKey.toString('base64')
                 }
                 var sigBuf = sign(keys.secretKey, JSON.stringify(msg))
-                msg.signature = bs58check.encode(sigBuf)
+                msg.signature = sigBuf.toString('base64')
                 client.write(msg)
             } else {
                 console.log('You do not have authentication keys')
@@ -61,11 +60,11 @@ rl.on('line', function(command) {
                 var msg = {
                     cmd: 'deposit',
                     amount: args[1],
-                    customerId: bs58check.encode(keys.publicKey),
+                    customerId: keys.publicKey.toString('base64'),
                     previousTxHash: latestHash
                 }
                 var sigBuf = sign(keys.secretKey, JSON.stringify(msg))
-                msg.signature = bs58check.encode(sigBuf)
+                msg.signature = sigBuf.toString('base64')
                 client.write(msg)
             } else {
                 console.log('You do not have authentication keys')
@@ -78,11 +77,11 @@ rl.on('line', function(command) {
                 var msg = {
                     cmd: 'withdraw',
                     amount: args[1],
-                    customerId: bs58check.encode(keys.publicKey),
+                    customerId: keys.publicKey.toString('base64'),
                     previousTxHash: latestHash
                 }
                 var sigBuf = sign(keys.secretKey, JSON.stringify(msg))
-                msg.signature = bs58check.encode(sigBuf)
+                msg.signature = sigBuf.toString('base64')
                 client.write(msg)
             } else {
                 console.log('You do not have authentication keys')
@@ -96,7 +95,7 @@ rl.on('line', function(command) {
                 keys = createKeyPair(keyStrings.publicKey, keyStrings.secretKey)
                 client.write({
                     cmd: 'register',
-                    customerId: bs58check.encode(keys.publicKey)
+                    customerId: keys.publicKey.toString('base64')
                 })
             } else {
                 rl.prompt()
@@ -136,7 +135,7 @@ client.on('data', async function (msg) {
                 console.log('Creating public and secret keys...')
                 await writeBufferToFile(keys.publicKey, publicKeyPath)
                 await writeBufferToFile(keys.secretKey, secretKeyPath)
-                console.log('Your public key is:', bs58check.encode(keys.publicKey))
+                console.log('Your public key is:', keys.publicKey.toString('base64'))
             } else {
                 // Cannot register with key pair
                 keys = {}

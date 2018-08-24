@@ -1,7 +1,6 @@
 const encodeKeys = require('./sign').encodeKeys
 const decodeKeys = require('./sign').decodeKeys
 const fs = require('fs')
-const bs58check = require('bs58check')
 
 function writeKeysToFile(keys, publicKeyPath, secretKeyPath) {
     return new Promise((resolve, reject) => {
@@ -39,7 +38,7 @@ function writeStringToFile(str, filePath) {
   
 function writeBufferToFile(keyBuf, filePath) {
     return new Promise((resolve, reject) => {
-        fs.writeFile(filePath, bs58check.encode(keyBuf), function (err) {
+        fs.writeFile(filePath, keyBuf.toString('base64'), function (err) {
             if (err) {
             console.log(err)
             return reject()
@@ -70,7 +69,7 @@ function getBufferFromFile(filePath) {
         if (str === '') {
             resolve('')
         } else {
-            var buf = bs58check.decode(str)
+            var buf = Buffer.from(str, 'base64')
             resolve(buf)
         }
     })

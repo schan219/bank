@@ -5,7 +5,6 @@ const fs = require('fs')
 const path = require('path')
 const sodium = require('sodium-native')
 const assert = require('assert')
-const bs58check = require('bs58check')
 
 const generateKeyStrings = require('./sign').generateKeyStrings
 const createKeyPair = require('./sign').createKeyPair
@@ -75,7 +74,6 @@ var nonce
   // Create or retrieve encryption secret key and nonce
   if (!fs.existsSync(encryptionSecretPath) || !fs.existsSync(noncePath)) {
     encryptKey = generateSecretKey()
-    sodium.sodium_mprotect_noaccess(encryptKey.secretKey)
     await writeBufferToFile(encryptKey, encryptionSecretPath)
     nonce = createNonce()
     await writeBufferToFile(nonce, noncePath)
@@ -234,6 +232,7 @@ function reduceLog(log, customerId) {
       balance -= parseInt(entry.value.amount, 10)
     }
   }
+  console.log("balance: ", balance);
   return balance
 }
 
@@ -243,7 +242,7 @@ function persistLog(log) {
     nonce = createNonce()
     
     try {
-      sodium.sodium_mprotect_readonly(keys.secretKey)
+      sodium.sodium_mprotect_readonly(encryptKey)
     } catch (error) {
       if (!error.errno === 0) {
         console.log(error)
@@ -324,28 +323,29 @@ function appendToTransactionLog(value) {
   var prevHash = log.length ? log[log.length - 1].hash : genesisHash
   try {
     sodium.sodium_mprotect_readonly(keys.secretKey)
+
+    var signature = sign(keys.secretKey, JSON.stringify(value))
+
+    try {
+      sodium.sodium_mprotect_noaccess(keys.secretKey)
+
+      var row = {
+        value: value,
+        signature: signature.toString('base64'),
+        hash: hashToHex(prevHash + signature + JSON.stringify(value))
+      }
+      log.push(row)
+
+    } catch (error) {
+      if (!error.errno === 0) {
+        console.log(error)
+      }
+    }
   } catch (error) {
     if (!error.errno === 0) {
       console.log(error)
     }
   }
-  
-  var signature = sign(keys.secretKey, JSON.stringify(value))
-
-  try {
-    sodium.sodium_mprotect_noaccess(keys.secretKey)
-  } catch (error) {
-    if (!error.errno === 0) {
-      console.log(error)
-    }
-  }
-
-  var row = {
-    value: value,
-    signature: bs58check.encode(signature),
-    hash: hashToHex(prevHash + signature + JSON.stringify(value))
-  }
-  log.push(row)
 }
 
 function hashToHex(message) {
@@ -362,12 +362,12 @@ function verifyTransactionLog(publicKey) {
   var currentHash = genesisHash
   var bool
   for (var entry of log) {
-    bool = verify(bs58check.decode(entry.signature), JSON.stringify(entry.value), publicKey)
+    bool = verify(Buffer.from(entry.signature, 'base64'), JSON.stringify(entry.value), publicKey)
     if (!bool) {
       console.log('Signature verification failed')
       return false
     }
-    currentHash = hashToHex(previousHash + bs58check.decode(entry.signature) + JSON.stringify(entry.value))
+    currentHash = hashToHex(previousHash + Buffer.from(entry.signature, 'base64') + JSON.stringify(entry.value))
     if (entry.hash !== currentHash) {
       console.log('Hash does not match')
       return false
@@ -378,8 +378,8 @@ function verifyTransactionLog(publicKey) {
 }
 
 function verifyCustomer(signature, message, publicKey) {
-    var publicKeyBuf = bs58check.decode(publicKey)
-    var signature = bs58check.decode(message.signature)
+    var publicKeyBuf = Buffer.from(publicKey, 'base64')
+    var signature = Buffer.from(message.signature, 'base64')
     delete message.signature
     var messageStr = JSON.stringify(message)
     var bool = verify(signature, messageStr, publicKeyBuf)

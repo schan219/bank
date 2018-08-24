@@ -1,12 +1,11 @@
 // sign.js
 const sodium = require('sodium-native')
-const cryptoRandomString = require('crypto-random-string')
-const bs58check = require('bs58check')
+const crypto = require('crypto')
 
 function generateKeyStrings() {
     return {
-        publicKey: cryptoRandomString(32),
-        secretKey: cryptoRandomString(64)
+        publicKey: crypto.randomBytes(32).toString('base64'),
+        secretKey: crypto.randomBytes(64).toString('base64')
     }
 }
 
@@ -22,15 +21,15 @@ function createKeyPair(publicKeyStr, secretKeyStr) {
 
 function encodeKeys(keyBuffer) {
     var keys = {}
-    keys.publicKey = bs58check.encode(keyBuffer.publicKey)
-    keys.secretKey = bs58check.encode(keyBuffer.secretKey)
+    keys.publicKey = keyBuffer.publicKey.toString('base64')
+    keys.secretKey = keyBuffer.secretKey.toString('base64')
     return keys
 }
 
 function decodeKeys(encodedKeys) {
     var keys = {}
-    keys.publicKey = bs58check.decode(encodedKeys.publicKey)
-    keys.secretKey = bs58check.decode(encodedKeys.secretKey)
+    keys.publicKey = Buffer.from(encodedKeys.publicKey, 'base64')
+    keys.secretKey = Buffer.from(encodedKeys.secretKey, 'base64')
     return keys
 }
 
